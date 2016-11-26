@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="">
+		<meta name="author" content="">
+		
+		<!-- Highcharts and Google API -->
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<script src="http://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/highcharts-more.js"></script>
+		<script src="http://code.highcharts.com/modules/exporting.js"></script>
+		
+		<script src="http://dweet.io/client/dweet.io.min.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+
+		<title>IoT GrovePi Sensor Submission (Local) </title>
+		
+		<link href="css/bootstrap.min.css" rel="stylesheet">
+		<link href="css/2-col-portfolio.css" rel="stylesheet">
+	</head>
+	<!-- Start of Body --> 
+	<body>
+		<!-- Navigation -->
+		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+				</div>
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li>
+							<a href="index.html">Live Sensor Data Feed</a>
+						</li>
+						<li>
+							<a href="localData.html">Locally Stored Sensor Data</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</nav>
+		
+		<!-- Page Content -->
+		<div class="container">
+			<!-- First Row of Dweet Data Charts -->
+			<div class="row">
+				<div class="col-md-6 portfolio-item">
+					<!-- Temperature chart -->
+						<div id="containerTemperature"></div>
+							<h3>Temperature</h3>
+							<p id="latestTemperature">Waiting for latest Temperature reading...</p>
+				</div>
+				
+				<div class="col-md-6 portfolio-item">
+					<!-- Humidity chart -->
+						<div id="containerHumidity" ></div>
+							<h3>Humidity</h3>
+							<p id="latestHumidity">Waiting for latest Humidity reading...</p>
+				</div>
+			</div>
+			<!-- end of first row of results  -->
+			<hr> 
+			<!-- Second Row of Dweet Data Charts -->
+			<div class="row">
+				<div class="col-md-6 portfolio-item">
+					<!-- Sound level chart -->
+						<div id="containerSound"></div>
+							<h3>Sound Level</h3>
+							<p id="latestSound">Waiting for latest Sound Level reading...</p>
+				</div>
+				
+				<div class="col-md-6 portfolio-item">
+					<!-- Light Level chart -->
+						<div id="containerLight" ></div>
+							<h3>Light Level</h3>
+							<p id="latestLight">Waiting for latest Light Level reading...</p>
+				</div>
+			</div>
+			<!-- end of second row -->
+	</div>
+	
+	
+<!-- End of container -->
+<script language="JavaScript">
+    
+    //An array to store our Temperature data
+    var temperatureData = []
+    var humidityData = []
+    var soundData = []
+    var lightData = []
+    
+    //An array to store the dweet creation time
+    var dweetCreatedData = []
+    
+    //An array to load local stored data into
+    var localDataCreationDate = []
+    var localDataTemperature = []
+    var localDataHumidity = []
+    var localDataSound = []
+	var localDataLight = []
+
+    var dweetCreatedOn
+    
+$(document).ready(function() {  
+    //This is the name of our Dweet to gather data from
+    var name = 'niallspi2016'
+	
+    //create an array to store our series data
+    var temperatureSeries = []
+    var humiditySeries = []
+	var soundSeries = []
+	var lightSeries = []
+    var dweetCreatedSeries = []
+    
+    
+     //######## -----------------------------FIRST CHART------------------------------------------------- ########
+    //Temperature chart 
+   var chart = {
+      type: 'areaspline',
+	  animation: Highcharts.svg,
+      marginRight: 10,
+   };
+   var title = {
+      text: 'Temperature'   
+   };   
+   var xAxis = {
+      type: 'datetime',
+      tickPixelInterval: 150,
+    labels: {enabled:false}
+   };
+   var yAxis = {
+      title: {
+         text: 'Degree Celsius (°C)'
+      },
+      plotLines: [{
+         value: 0,
+         width: 1,
+         color: '#808080'
+      }]
+   };
+    
+    //this creates the box that appears on hovering over data points in the chart
+   var tooltip = {
+      formatter: function () {
+      return '<b>' + "Temperature was "  + Highcharts.numberFormat(this.y, 2)  + "°C" + "  on " + this.x;
+      }
+   };
+    
+    //this controls the data points on the chart
+   var plotOptions = {
+      area: {
+         pointStart: 1940,
+         marker: {
+            enabled: false,
+            symbol: 'circle',
+            radius: 2,
+            states: {
+               hover: {
+                 enabled: true
+               }
+            }
+         }
+      }
+   };
+    
+    //this would allow for a chart legend to be displayed
+   var legend = {
+      enabled: false
+   };
+    
+    //this would allow users to export the data with further implimentation
+   var exporting = {
+      enabled: false
+   };
+
+    
+    //######## -----------------------------SECOND CHART-------------------------------------- ########
+    
+
+   //Humidity chart 
+   
+    //this creates our fourth chart in a function, Disk Information, with different settings applied
+   var setupSecondChart = function() {
+    //this creates our chart with different settings
+   var chart2 = {
+            type: 'gauge',
+            plotBackgroundColor: null,
+            plotBackgroundImage: null,
+            plotBorderWidth: 0,
+            plotShadow: false
+   };
+   var title = {
+      text: 'Humidity'   
+   };   
+         
+    var pane = {
+            startAngle: -150,
+            endAngle: 150,
+            background: [{
+                backgroundColor: {
+                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                    stops: [
+                        [0, '#FFF'],
+                        [1, '#333']
+                    ]
+                },
+                borderWidth: 0,
+                outerRadius: '109%'
+            }, {
+                backgroundColor: {
+                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                    stops: [
+                        [0, '#333'],
+                        [1, '#FFF']
+                    ]
+                },
+                borderWidth: 1,
+                outerRadius: '107%'
+            }, {
+                // default background
+            }, {
+                backgroundColor: '#DDD',
+                borderWidth: 0,
+                outerRadius: '105%',
+                innerRadius: '103%'
+            }]
+        };
+   var yAxis = {
+
+       
+            min: 0,
+            max: 100,
+
+            minorTickInterval: 'auto',
+            minorTickWidth: 1,
+            minorTickLength: 10,
+            minorTickPosition: 'inside',
+            minorTickColor: '#666',
+
+            tickPixelInterval: 30,
+            tickWidth: 2,
+            tickPosition: 'inside',
+            tickLength: 10,
+            tickColor: '#666',
+            labels: {
+                step: 2,
+                rotation: 'auto'
+            },
+            title: {
+                text: 'Humidity %'
+            },
+            plotBands: [{
+                from: 0,
+                to: 45,
+                color: '#55BF3B' // green
+            }, {
+                from: 45,
+                to: 85,
+                color: '#DDDF0D' // yellow
+            }, {
+                from: 85,
+                to: 100,
+                color: '#DF5353' // red
+            }]
+       
+       
+   };
+		var tooltip = {
+			formatter: function () {
+		return '<b>' + "Humidity was "  + Highcharts.numberFormat(this.y, 2)  + "%" + "  on " + this.x;
+		}
+	}; 
+       //This stores the Disk Information over time data series in an array
+        humiditySeries = [{
+        name: 'Humidity %',
+        data: humidityData, 
+            tooltip: {
+                valueSuffix: '% Used'
+            }
+        }]
+
+        var json = {}; 
+        json.chart = chart2; 
+        json.title = title; 
+        json.tooltip = tooltip;
+        json.xAxis = xAxis;
+        json.yAxis = yAxis; 
+        json.legend = legend; 
+        json.exporting = exporting; 
+        json.series = humiditySeries;
+        json.plotOptions = plotOptions;
+       
+       //Update our div container to hold the Humidity chart
+       $('#containerHumidity').highcharts(json);
+       
+       chart = $('#containerHumidity').highcharts()
+        //Update the xAxis to display Dweet Creation value
+		chart.xAxis[0].update({categories: dweetCreatedData}, true);
+       
+        //This calls the function to setup the 3rd chart
+        setupThirdChart()
+	}
+   
+    //######## -----------------------------THIRD CHART-------------------------------------- ########
+   //Sound level chart 
+   var setupThirdChart = function() {
+ 
+   var chart3 = {
+      type: 'spline',
+	  animation: Highcharts.svg,
+      marginRight: 10,
+   };
+   var title = {
+      text: 'Relative Sound'   
+   };   
+   var xAxis = {
+      type: 'datetime',
+      tickPixelInterval: 150
+   };
+   var yAxis = {
+      title: {
+         text: 'Sound level (DdB)'
+      },
+      plotLines: [{
+         value: 0,
+         width: 1,
+         color: '#808080'
+      }]
+   };
+    
+    //this creates the box that appears on hovering over data points in the chart
+   var tooltip = {
+      formatter: function () {
+      return '<b>' + "The sound level in the room was "  + Highcharts.numberFormat(this.y, 2)  + " Decibels " + "  on " + this.x;
+      }
+   };
+    
+    //this controls the data points on the chart
+   var plotOptions = {
+      area: {
+         pointStart: 1940,
+         marker: {
+            enabled: false,
+            symbol: 'circle',
+            radius: 2,
+            states: {
+               hover: {
+                 enabled: true
+               }
+            }
+         }
+      }
+   };
+       
+        //this would allow for a chart legend to be displayed
+   var legend = {
+      enabled: false
+   };
+    
+    //this would allow users to export the data with further implimentation
+   var exporting = {
+      enabled: false
+   };
+            
+       //This stores the sound level over time data series in an array
+        soundSeries= [{
+        name: 'Sound Data',
+        data: soundData, color: '#FF0000', 
+        dashStyle: 'longdash'
+        }]
+
+        var json = {}; 
+        json.chart = chart3; 
+        json.title = title; 
+        json.tooltip = tooltip;
+        json.xAxis = xAxis;
+        json.yAxis = yAxis; 
+        json.legend = legend; 
+        json.exporting = exporting; 
+        json.series = soundSeries;
+        json.plotOptions = plotOptions;
+     
+       $('#containerSound').highcharts(json);
+       
+       chart = $('#containerSound').highcharts()
+        //Update the xAxis to display Dweet Creation value
+		chart.xAxis[0].update({categories: dweetCreatedData}, true);
+       
+	   //This calls the function to setup the 4th chart
+        setupFourthChart()
+   }
+
+    //######## -----------------------------FOURTH CHART-------------------------------------- ########
+    //Light level chart 
+   var setupFourthChart = function() {
+   
+   
+   var chart4 = {
+      type: 'spline',
+	  animation: Highcharts.svg,
+      marginRight: 10,
+   };
+   var title = {
+      text: 'Light level'   
+   };   
+   var xAxis = {
+      type: 'datetime',
+      tickPixelInterval: 150
+   };
+   var yAxis = {
+      title: {
+         text: 'Light level (Lux)'
+      },
+      plotLines: [{
+         value: 0,
+         width: 1,
+         color: '#808080'
+      }]
+   };
+    
+    //this creates the box that appears on hovering over data points in the chart
+   var tooltip = {
+      formatter: function () {
+      return '<b>' + "The light level in the room was "  + Highcharts.numberFormat(this.y, 2)  + " lux " + "  on " + this.x;
+      }
+   };
+    
+    //this controls the data points on the chart
+   var plotOptions = {
+      area: {
+         pointStart: 1940,
+         marker: {
+            enabled: false,
+            symbol: 'circle',
+            radius: 2,
+            states: {
+               hover: {
+                 enabled: true
+               }
+            }
+         }
+      }
+   };
+       
+        //this would allow for a chart legend to be displayed
+   var legend = {
+      enabled: false
+   };
+    
+    //this would allow users to export the data with further implimentation
+   var exporting = {
+      enabled: false
+   };
+            
+       //This stores the light level over time data series in an array
+        lightSeries= [{
+        name: 'Light level Data',
+        data: lightData, color: '#FF0000', 
+        dashStyle: 'longdash'
+        }]
+
+        var json = {}; 
+        json.chart = chart4; 
+        json.title = title; 
+        json.tooltip = tooltip;
+        json.xAxis = xAxis;
+        json.yAxis = yAxis; 
+        json.legend = legend; 
+        json.exporting = exporting; 
+        json.series = lightSeries;
+        json.plotOptions = plotOptions;
+       
+       //Update our div container to hold the Humidity chart
+       $('#containerLight').highcharts(json);
+       
+       chart = $('#containerLight').highcharts()
+        //Update the xAxis to display Dweet Creation value
+		chart.xAxis[0].update({categories: dweetCreatedData}, true);
+       
+   }
+
+   //######## -----------------------------END OF FOURTH CHART-------------------------------------- ########
+ 
+    //End of chart building
+   
+   //This function loads locally stored data into the charts
+   var loadLocalChartData = function() {
+        
+            //Retrieve locally stored data
+            temperatureData = JSON.parse(localStorage.getItem("Temperature"));
+       
+            dweetCreatedData =  JSON.parse(localStorage.getItem("Dweet Created On"));
+       
+            humidityData = JSON.parse(localStorage.getItem("Humidity"));
+       
+            soundData = JSON.parse(localStorage.getItem("Sound"));
+       
+            lightData = JSON.parse(localStorage.getItem("Light"));
+       
+       
+            //Logs the values into the browsers console - good for debugging
+            console.log("Temperature " + localStorage.getItem("Temperature") + " retrieved successfully.")
+            
+            console.log("Temperature Data array now contains " + temperatureData + " successfully.")
+            
+            
+            dweetCreatedOn =  new Date(JSON.parse(localStorage.getItem("Last Dweet Stored Date")));
+            dweetCreatedOnString = localStorage.getItem("Last Dweet Stored Date")
+       
+            
+            //Make a check to see if any local data exists
+            console.log(dweetCreatedOn)
+            
+            if (dweetCreatedOnString != null){
+                
+                $('#latestCreated').text("Last Dweet data stored on "+dweetCreatedOn);
+            }
+            else{
+                $('#latestCreated').text("No local Dweet data stored yet. Please return to the Live Data Feed page and await new data to arrive first.");
+            }
+       
+            
+        
+        //This stores the dweet creation data over time in an array
+		dweetCreatedSeries= [{
+	      name: 'Dweet Creation Date',
+	      data: dweetCreatedData   
+	   }]
+        
+        //Temperature chart data defined
+		temperatureSeries= [{
+	      name: 'Temperature Data',
+	      data: temperatureData,
+          zones: [{
+                value: 18,
+                color: '#7cb5ec'
+            }, {
+                value: 22,
+                color: '#90ed7d'
+            }, {
+                color: '#ED7D7D'
+            }] 
+        
+            
+	   }]
+        
+        
+       //Various data loaded into temperature chart variable
+	   var temperatureChart = {};   
+	   temperatureChart.chart = chart; 
+	   temperatureChart.title = title;     
+	   temperatureChart.tooltip = tooltip;
+	   temperatureChart.xAxis = xAxis;
+	   temperatureChart.yAxis = yAxis; 
+	   temperatureChart.legend = legend;  
+	   temperatureChart.exporting = exporting;   
+	   temperatureChart.series = temperatureSeries;
+	   temperatureChart.plotOptions = plotOptions;
+        
+        
+        //Set some additional chart options - not currently in use
+	   Highcharts.setOptions({
+	      global: {
+	         useUTC: false
+	      }
+	   });
+        
+        //Update our div container to hold the temperature chart 
+        $('#containerTemperature').highcharts(temperatureChart);
+		chart = $('#containerTemperature').highcharts()
+        //Update the xAxis to display Dweet Creation value
+		chart.xAxis[0].update({categories: dweetCreatedData}, true);
+		
+        //This calls the function to setup the 2nd chart
+        setupSecondChart()
+	} 
+        //########END OF TEMPERATURE CHART(CHART 1) DEFINED########
+    loadLocalChartData()
+			  
+});
+</script>
+    
+</body>
+
+</html>
